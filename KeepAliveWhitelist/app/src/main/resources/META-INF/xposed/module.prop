@@ -1,0 +1,5 @@
+name=KeepAlive Whitelist
+version=1.0
+versionCode=1
+author=you
+description=Allow selected apps to survive "Don't keep activities"

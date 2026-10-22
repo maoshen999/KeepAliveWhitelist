@@ -1,0 +1,3 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:label="KeepAlive Whitelist" android:theme="@android:style/Theme.DeviceDefault.DayNight" />
+</manifest>
