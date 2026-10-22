@@ -27,6 +27,7 @@ jobs:
       run: chmod +x gradlew || true
 
     - name: Build with Gradle
+      working-directory: KeepAliveWhitelist  # 👈 新增这一行，指定工作目录
       run: gradle assembleRelease
 
     - name: Upload APK
