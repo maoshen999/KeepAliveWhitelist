@@ -1,6 +1,8 @@
 package com.example.keepalive;
 
+import java.lang.reflect.Method;
 import java.util.Set;
+
 import io.github.libxposed.api.XposedInterface;
 import io.github.libxposed.api.XposedModule;
 import io.github.libxposed.api.XposedModuleInterface;
@@ -12,7 +14,8 @@ public class MainHook extends XposedModule {
     public void onSystemServerStarting(XposedModuleInterface.SystemServerStartingParam param) {
         whitelist = WhitelistConfig.readWhitelist();
         if (whitelist.isEmpty()) {
-            log("白名单为空，跳过 Hook");
+            // 👈 修正 1：使用 log(int, String, String)
+            log(4, "KeepAlive", "白名单为空，跳过 Hook"); 
             return;
         }
 
@@ -21,15 +24,24 @@ public class MainHook extends XposedModule {
         try {
             amsClass = Class.forName("com.android.server.am.ActivityManagerService", false, cl);
         } catch (Throwable t) {
-            log("未找到 ActivityManagerService：" + t);
+            log(6, "KeepAlive", "未找到 ActivityManagerService：" + t); // 6 = ERROR
             return;
         }
 
-        hookAllMethods(amsClass, "destroyActivityLocked", new DestroyHook());
-        hookAllMethods(amsClass, "cleanUpActivityLocked", new CleanUpHook());
-        log("已安装 Hook，白名单数量=" + whitelist.size());
+        // 👈 修正 2：手动遍历方法，代替不存在的 hookAllMethods
+        for (Method method : amsClass.getDeclaredMethods()) {
+            String methodName = method.getName();
+            if (methodName.equals("destroyActivityLocked")) {
+                hook(method).intercept(new DestroyHook());
+            } else if (methodName.equals("cleanUpActivityLocked")) {
+                hook(method).intercept(new CleanUpHook());
+            }
+        }
+
+        log(4, "KeepAlive", "已安装 Hook，白名单数量=" + whitelist.size());
     }
 
+    // ... 下面的 DestroyHook, CleanUpHook, isSystemApp 等方法保持完全不变 ...
     private class DestroyHook implements XposedInterface.Hooker {
         @Override
         public Object intercept(XposedInterface.Chain chain) throws Throwable {
@@ -38,10 +50,10 @@ public class MainHook extends XposedModule {
             
             if (pkg != null && whitelist.contains(pkg)) {
                 if (isSystemApp(record)) {
-                    log("包名在白名单内但属于系统应用，放行销毁：" + pkg);
+                    log(4, "KeepAlive", "包名在白名单内但属于系统应用，放行销毁：" + pkg);
                     return chain.proceed();
                 }
-                log("阻止销毁白名单第三方 Activity：" + pkg);
+                log(4, "KeepAlive", "阻止销毁白名单第三方 Activity：" + pkg);
                 return null;
             }
             return chain.proceed();
@@ -55,6 +67,7 @@ public class MainHook extends XposedModule {
         }
     }
 
+    // (isSystemApp, extractPackage, tryStringField, tryObjectField, tryIntField 这些方法原样保留，不要动)
     private boolean isSystemApp(Object record) {
         if (record == null) return false;
         Object info = tryObjectField(record, "info");
