@@ -18,7 +18,9 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 }
-
 dependencies {
     compileOnly 'io.github.libxposed:api:102.0.0'
+    // 加入基础 AndroidX 支持
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.9.0'
 }
