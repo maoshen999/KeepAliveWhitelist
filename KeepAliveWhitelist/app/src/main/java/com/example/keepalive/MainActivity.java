@@ -1,14 +1,14 @@
 package com.example.keepalive;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
-import androidx.appcompat.app.AppCompatActivity; // 如果你的工程没引入appcompat，请改成 android.app.Activity
-import java.io.DataOutputStream;
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,13 +29,12 @@ public class MainActivity extends Activity {
         Button btnAdd = findViewById(R.id.btnAdd);
         listView = findViewById(R.id.listView);
 
-        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, packageList);
+        // 明确指定泛型 <String>，防止编译器推断失败
+        adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, packageList);
         listView.setAdapter(adapter);
 
-        // 加载已有数据
         loadWhitelist();
 
-        // 添加按钮点击事件
         btnAdd.setOnClickListener(v -> {
             String pkg = etPackageName.getText().toString().trim();
             if (!pkg.isEmpty() && !packageList.contains(pkg)) {
@@ -46,7 +45,6 @@ public class MainActivity extends Activity {
             }
         });
 
-        // 长按删除
         listView.setOnItemLongClickListener((parent, view, position, id) -> {
             packageList.remove(position);
             adapter.notifyDataSetChanged();
@@ -82,10 +80,8 @@ public class MainActivity extends Activity {
         }
         
         try {
-            // 1. 确保目录存在
             Runtime.getRuntime().exec("su -c mkdir -p /data/adb/modules/keepalive_whitelist");
             
-            // 2. 写入文件
             Process process = Runtime.getRuntime().exec("su");
             DataOutputStream os = new DataOutputStream(process.getOutputStream());
             os.writeBytes("echo '" + sb.toString() + "' > " + CONFIG_PATH + "\n");
